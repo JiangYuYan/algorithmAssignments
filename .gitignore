@@ -1,0 +1,8 @@
+*.txt
+*.png
+*.iml
+*.idea
+*.lift
+
+# ignore all files in Files
+Files/
