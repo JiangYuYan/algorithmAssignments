@@ -5,26 +5,30 @@ public class SeamCarver {
     private int thisWidth;
     private int thisHeight;
     private double[] thisEnergy;
-    private int[][] thisRed;
-    private int[][] thisGreen;
-    private int[][] thisBlue;
+    private int[] thisR;
+    private int[] thisG;
+    private int[] thisB;
     private boolean thisColMajor = false;
+    private boolean thisModified = false;
 
     // create a seam carver object based on the given picture
     public SeamCarver(Picture picture) {
+        if (picture == null)
+            throw new IllegalArgumentException("Null arguement.");
         thisPicture = new Picture(picture);
         thisWidth = thisPicture.width();
         thisHeight = thisPicture.height();
-        thisRed = new int[thisWidth][thisHeight];
-        thisGreen = new int[thisWidth][thisHeight];
-        thisBlue = new int[thisWidth][thisHeight];
+        thisR = new int[thisWidth*thisHeight];
+        thisG = new int[thisWidth*thisHeight];
+        thisB = new int[thisWidth*thisHeight];
         thisEnergy = new double[thisWidth*thisHeight];
         for (int i = 0; i < thisWidth; ++i) {
             for (int j = 0; j < thisHeight; ++j) {
                 int rgb = thisPicture.getRGB(i, j);
-                thisRed[i][j] = (rgb >> 16) & 0xFF;
-                thisGreen[i][j] = (rgb >> 8) & 0xFF;
-                thisBlue[i][j] = (rgb >> 0) & 0xFF;
+                int index = getIndex(i, j);
+                thisR[index] = (rgb >> 16) & 0xFF;
+                thisG[index] = (rgb >> 8) & 0xFF;
+                thisB[index] = (rgb >> 0) & 0xFF;
             }
         }
         for (int i = 0; i < thisWidth; ++i) {
@@ -39,14 +43,30 @@ public class SeamCarver {
             throw new IllegalArgumentException("Out of range.");
         if (x == 0 || x == thisWidth - 1 || y == 0 || y == thisHeight - 1)
             return 1000;
-        double sum = Math.pow(thisRed[x+1][y] - thisRed[x-1][y], 2) + Math.pow(thisGreen[x+1][y] - thisGreen[x-1][y], 2) + Math.pow(thisBlue[x+1][y] - thisBlue[x-1][y], 2);
-        sum += Math.pow(thisRed[x][y+1] - thisRed[x][y-1], 2) + Math.pow(thisGreen[x][y+1] - thisGreen[x][y-1], 2) + Math.pow(thisBlue[x][y+1] - thisBlue[x][y-1], 2);
+        double sum = 0;
+        sum += Math.pow(thisR[getIndex(x+1, y)] - thisR[getIndex(x-1, y)], 2);
+        sum += Math.pow(thisG[getIndex(x+1, y)] - thisG[getIndex(x-1, y)], 2);
+        sum += Math.pow(thisB[getIndex(x+1, y)] - thisB[getIndex(x-1, y)], 2);
+        sum += Math.pow(thisR[getIndex(x, y+1)] - thisR[getIndex(x, y-1)], 2);
+        sum += Math.pow(thisG[getIndex(x, y+1)] - thisG[getIndex(x, y-1)], 2);
+        sum += Math.pow(thisB[getIndex(x, y+1)] - thisB[getIndex(x, y-1)], 2);
         sum = Math.sqrt(sum);
         return sum;
     }
 
     // current picture
     public Picture picture() {
+        if (!thisModified)
+            return thisPicture;
+        thisPicture = new Picture(width(), height());
+        for (int i = 0; i < width(); ++i) {
+            for (int j = 0; j < height(); ++j) {
+                int index = getIndex(i, j);
+                int rgb = (thisR[index] << 16) + (thisG[index] << 8) + (thisB[index] << 0);
+                thisPicture.setRGB(i, j, rgb);
+            }
+        }
+        thisModified = false;
         return thisPicture;
     }
 
@@ -171,12 +191,53 @@ public class SeamCarver {
 
     // remove horizontal seam from current picture
     public void removeHorizontalSeam(int[] seam) {
+        if (seam == null)
+            throw new IllegalArgumentException("Null arguement.");
+        if (thisHeight <= 1)
+            throw new IllegalArgumentException("Height <= 1.");
+        if (seam.length != thisWidth)
+            throw new IllegalArgumentException("Wrong length.");
+        for (int i = 0; i < thisWidth; ++i) {
+            if (seam[i] < 0 || seam[i] >= thisHeight)
+                throw new IllegalArgumentException("Out of range.");
+        }
+        shiftdata(seam);
+        thisHeight -= 1;
+        for (int i = 0; i < thisWidth; ++i) {
+            for (int j = 0; j < thisHeight; ++j) {
+                if (j >= seam[i] - 1 && j <= seam[i]) {
+                    thisEnergy[getIndex(i, j)] = getEnergy(i, j);
+                }
+            }
+        }
+        thisModified = true;
+    }
 
+    private void shiftdata(int[] cols) {
+        int[] seamedIndices = new int[thisWidth];
+        for (int i = 0; i < thisWidth; ++i) {
+            seamedIndices[i] = getIndex(i, cols[i]);
+        }
+        int newIndex = 0;
+        int count = 0;
+        for (int oldIndex = 0; oldIndex < thisWidth * thisHeight; ++oldIndex) {
+            if (count < thisWidth && oldIndex == seamedIndices[count]) {
+                ++count;
+            } else {
+                thisR[newIndex] = thisR[oldIndex];
+                thisG[newIndex] = thisG[oldIndex];
+                thisB[newIndex] = thisB[oldIndex];
+                thisEnergy[newIndex] = thisEnergy[oldIndex];
+                ++newIndex;
+            }
+        }
     }
 
     // remove vertical seam from current picture
     public void removeVerticalSeam(int[] seam) {
-
+        transpose();
+        removeHorizontalSeam(seam);
+        transpose();
     }
 
     //  unit testing (optional)
