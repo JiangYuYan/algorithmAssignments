@@ -1,0 +1,6 @@
+*.txt
+*.png
+*.iml
+
+# ignore all files in Files
+Files/
