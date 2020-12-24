@@ -1,5 +1,5 @@
 import edu.princeton.cs.algs4.Picture;
-
+import edu.princeton.cs.algs4.StdOut;
 public class SeamCarver {
     private Picture thisPicture;
     private int thisWidth;
@@ -8,6 +8,7 @@ public class SeamCarver {
     private int[][] thisRed;
     private int[][] thisGreen;
     private int[][] thisBlue;
+    private boolean col_major = false;
 
     // create a seam carver object based on the given picture
     public SeamCarver(Picture picture) {
@@ -28,7 +29,7 @@ public class SeamCarver {
         }
         for (int i = 0; i < thisWidth; ++i) {
             for (int j = 0; j < thisHeight; ++j) {
-                thisEnergy[i][j] = energy(i, j);
+                thisEnergy[i][j] = getEnergy(i, j);
             }
         }
     }
@@ -61,7 +62,7 @@ public class SeamCarver {
 
     // energy of pixel at column x and row y
     public double energy(int x, int y) {
-        
+        return thisEnergy[x][y];
     }
 
     // sequence of indices for horizontal seam
@@ -78,13 +79,25 @@ public class SeamCarver {
                 disTo[i][j] = Double.POSITIVE_INFINITY;
             }
         }
-        for (int i = 1; i < thisWidth; ++i) {
+        for (int i = 0; i < thisWidth; ++i) {
             for (int j = 0; j < thisHeight; ++j) {
                 relax(pixelTo, disTo, i, j);
             }
         }
+        for (int j = 0; j < thisHeight; ++j) {
+            for (int i = 0; i < thisWidth; ++i) {
+                StdOut.print(pixelTo[i][j] + " ");
+            }
+            StdOut.println();
+        }
+        for (int j = 0; j < thisHeight; ++j) {
+            for (int i = 0; i < thisWidth; ++i) {
+                StdOut.print(disTo[i][j] + " ");
+            }
+            StdOut.println();
+        }
         double disMin = Double.POSITIVE_INFINITY;
-        int pixelMin = 0;
+        int pixelMin = 1;
         for (int j = 0; j < thisHeight; ++j) {
             if (disTo[thisWidth-1][j] < disMin) {
                 disMin = disTo[thisWidth-1][j];
@@ -93,7 +106,7 @@ public class SeamCarver {
         }
         seam[thisWidth-1] = pixelMin;
         for (int i = thisWidth - 1; i > 0; --i) {
-            seam[i-1] = pixelTo[i, seam[i]];
+            seam[i-1] = getJ(pixelTo[i][seam[i]]);
         }
         return seam;
     }
@@ -102,22 +115,29 @@ public class SeamCarver {
         if (x == thisWidth - 1)
             return;
         int xNext = x + 1;
-        int index = convert(x, y);
+        int index = getIndex(x, y);
         for (int i : adj(x, y)) {
-            if (disTo[xNext][i] > disTo[x][y] + thisEnergy(xNext, y)) {
+            if (disTo[xNext][i] > disTo[x][y] + thisEnergy[xNext][i]) {
                 pixelTo[xNext][i] = index;
-                distTo[xNext][i] = disTo[x][y] + thisEnergy(xNext, y);
+                disTo[xNext][i] = disTo[x][y] + thisEnergy[xNext][i];
             }
         }
     }
 
-    private int convert(int x, int y, boolean flag) {
-        if (!flag)
-            return x * thisWidth + y;
+    private int getIndex(int x, int y) {
+        if (!col_major)
+            return x * thisHeight + y;
         else
-            return y * thisWidth + x;
+            return y * thisHeight + x;
     }
-    
+
+    private int getJ(int index) {
+        if (col_major)
+            return index / thisHeight;
+        else
+            return index % thisHeight;
+    }
+
     private int[] adj(int x, int y) {
         int[] adjacent;
         if (y == 0) {
@@ -149,7 +169,6 @@ public class SeamCarver {
         int temp = thisWidth;
         thisWidth = thisHeight;
         thisHeight = temp;
-        double[][] 
     }
 
     // remove horizontal seam from current picture
