@@ -1,5 +1,5 @@
 import edu.princeton.cs.algs4.Picture;
-import edu.princeton.cs.algs4.StdOut;
+
 public class SeamCarver {
     private Picture thisPicture;
     private int thisWidth;
@@ -104,18 +104,6 @@ public class SeamCarver {
                 relax(pixelTo, disTo, i, j);
             }
         }
-        // for (int j = 0; j < thisHeight; ++j) {
-        //     for (int i = 0; i < thisWidth; ++i) {
-        //         StdOut.print(pixelTo[i][j] + " ");
-        //     }
-        //     StdOut.println();
-        // }
-        // for (int j = 0; j < thisHeight; ++j) {
-        //     for (int i = 0; i < thisWidth; ++i) {
-        //         StdOut.print(disTo[i][j] + " ");
-        //     }
-        //     StdOut.println();
-        // }
         double disMin = Double.POSITIVE_INFINITY;
         int pixelMin = 0;
         for (int j = 0; j < thisHeight; ++j) {
@@ -214,21 +202,46 @@ public class SeamCarver {
     }
 
     private void shiftdata(int[] cols) {
-        int[] seamedIndices = new int[thisWidth];
+        // int[] seamedIndices = new int[thisWidth];
+        // for (int i = 0; i < thisWidth; ++i) {
+        //     seamedIndices[i] = getIndex(i, cols[i]);
+        // }
+        // int newIndex = 0;
+        // int count = 0;
+        // for (int oldIndex = 0; oldIndex < thisWidth * thisHeight; ++oldIndex) {
+        //     if (count < thisWidth && oldIndex == seamedIndices[count]) {
+        //         ++count;
+        //     } else {
+        //         thisR[newIndex] = thisR[oldIndex];
+        //         thisG[newIndex] = thisG[oldIndex];
+        //         thisB[newIndex] = thisB[oldIndex];
+        //         thisEnergy[newIndex] = thisEnergy[oldIndex];
+        //         ++newIndex;
+        //     }
+        // }
+        int newIndex, oldIndex;
         for (int i = 0; i < thisWidth; ++i) {
-            seamedIndices[i] = getIndex(i, cols[i]);
-        }
-        int newIndex = 0;
-        int count = 0;
-        for (int oldIndex = 0; oldIndex < thisWidth * thisHeight; ++oldIndex) {
-            if (count < thisWidth && oldIndex == seamedIndices[count]) {
-                ++count;
-            } else {
-                thisR[newIndex] = thisR[oldIndex];
-                thisG[newIndex] = thisG[oldIndex];
-                thisB[newIndex] = thisB[oldIndex];
-                thisEnergy[newIndex] = thisEnergy[oldIndex];
-                ++newIndex;
+            for (int j = 0; j < thisHeight; ++j) {
+                if (j < cols[i]) {
+                    --thisHeight;
+                    newIndex = getIndex(i, j);
+                    ++thisHeight;
+                    oldIndex = getIndex(i, j);
+                    thisR[newIndex] = thisR[oldIndex];
+                    thisG[newIndex] = thisG[oldIndex];
+                    thisB[newIndex] = thisB[oldIndex];
+                    thisEnergy[newIndex] = thisEnergy[oldIndex];
+                } else if (j > cols[i]) {
+                    --thisHeight;
+                    newIndex = getIndex(i, j-1);
+                    ++thisHeight;
+                    oldIndex = getIndex(i, j);
+                    thisR[newIndex] = thisR[oldIndex];
+                    thisG[newIndex] = thisG[oldIndex];
+                    thisB[newIndex] = thisB[oldIndex];
+                    thisEnergy[newIndex] = thisEnergy[oldIndex];
+                }
+            
             }
         }
     }
