@@ -4,11 +4,11 @@ public class SeamCarver {
     private Picture thisPicture;
     private int thisWidth;
     private int thisHeight;
-    private double[][] thisEnergy;
+    private double[] thisEnergy;
     private int[][] thisRed;
     private int[][] thisGreen;
     private int[][] thisBlue;
-    private boolean col_major = false;
+    private boolean thisColMajor = false;
 
     // create a seam carver object based on the given picture
     public SeamCarver(Picture picture) {
@@ -18,7 +18,7 @@ public class SeamCarver {
         thisRed = new int[thisWidth][thisHeight];
         thisGreen = new int[thisWidth][thisHeight];
         thisBlue = new int[thisWidth][thisHeight];
-        thisEnergy = new double[thisWidth][thisHeight];
+        thisEnergy = new double[thisWidth*thisHeight];
         for (int i = 0; i < thisWidth; ++i) {
             for (int j = 0; j < thisHeight; ++j) {
                 int rgb = thisPicture.getRGB(i, j);
@@ -29,7 +29,7 @@ public class SeamCarver {
         }
         for (int i = 0; i < thisWidth; ++i) {
             for (int j = 0; j < thisHeight; ++j) {
-                thisEnergy[i][j] = getEnergy(i, j);
+                thisEnergy[getIndex(i, j)] = getEnergy(i, j);
             }
         }
     }
@@ -62,78 +62,75 @@ public class SeamCarver {
 
     // energy of pixel at column x and row y
     public double energy(int x, int y) {
-        return thisEnergy[x][y];
+        return thisEnergy[getIndex(x, y)];
     }
 
     // sequence of indices for horizontal seam
     public int[] findHorizontalSeam() {
         int[] seam = new int[thisWidth];
-        int[][] pixelTo = new int[thisWidth][thisHeight];
-        double[][] disTo = new double[thisWidth][thisHeight];
+        int[] pixelTo = new int[thisWidth*thisHeight];
+        double[] disTo = new double[thisWidth*thisHeight];
         for (int j = 0; j < thisHeight; ++j) {
-            disTo[0][j] = thisEnergy[0][j];
-            pixelTo[0][j] = -1;
+            disTo[getIndex(0, j)] = thisEnergy[getIndex(0, j)];
+            pixelTo[getIndex(0, j)] = -1;
         }
         for (int i = 1; i < thisWidth; ++i) {
             for (int j = 0; j < thisHeight; ++j) {
-                disTo[i][j] = Double.POSITIVE_INFINITY;
+                disTo[getIndex(i, j)] = Double.POSITIVE_INFINITY;
             }
         }
-        for (int i = 0; i < thisWidth; ++i) {
+        for (int i = 0; i < thisWidth - 1; ++i) {
             for (int j = 0; j < thisHeight; ++j) {
                 relax(pixelTo, disTo, i, j);
             }
         }
-        for (int j = 0; j < thisHeight; ++j) {
-            for (int i = 0; i < thisWidth; ++i) {
-                StdOut.print(pixelTo[i][j] + " ");
-            }
-            StdOut.println();
-        }
-        for (int j = 0; j < thisHeight; ++j) {
-            for (int i = 0; i < thisWidth; ++i) {
-                StdOut.print(disTo[i][j] + " ");
-            }
-            StdOut.println();
-        }
+        // for (int j = 0; j < thisHeight; ++j) {
+        //     for (int i = 0; i < thisWidth; ++i) {
+        //         StdOut.print(pixelTo[i][j] + " ");
+        //     }
+        //     StdOut.println();
+        // }
+        // for (int j = 0; j < thisHeight; ++j) {
+        //     for (int i = 0; i < thisWidth; ++i) {
+        //         StdOut.print(disTo[i][j] + " ");
+        //     }
+        //     StdOut.println();
+        // }
         double disMin = Double.POSITIVE_INFINITY;
-        int pixelMin = 1;
+        int pixelMin = 0;
         for (int j = 0; j < thisHeight; ++j) {
-            if (disTo[thisWidth-1][j] < disMin) {
-                disMin = disTo[thisWidth-1][j];
+            if (disTo[getIndex(thisWidth-1, j)] < disMin) {
+                disMin = disTo[getIndex(thisWidth-1, j)];
                 pixelMin = j;
             }
         }
         seam[thisWidth-1] = pixelMin;
         for (int i = thisWidth - 1; i > 0; --i) {
-            seam[i-1] = getJ(pixelTo[i][seam[i]]);
+            seam[i-1] = getJ(pixelTo[getIndex(i, seam[i])]);
         }
         return seam;
     }
 
-    private void relax(int[][] pixelTo, double[][] disTo, int x, int y) {
-        if (x == thisWidth - 1)
-            return;
-        int xNext = x + 1;
+    private void relax(int[] pixelTo, double[] disTo, int x, int y) {
         int index = getIndex(x, y);
         for (int i : adj(x, y)) {
-            if (disTo[xNext][i] > disTo[x][y] + thisEnergy[xNext][i]) {
-                pixelTo[xNext][i] = index;
-                disTo[xNext][i] = disTo[x][y] + thisEnergy[xNext][i];
+            if (disTo[i] > disTo[index] + thisEnergy[i]) {
+                pixelTo[i] = index;
+                disTo[i] = disTo[index] + thisEnergy[i];
             }
         }
     }
 
     private int getIndex(int x, int y) {
-        if (!col_major)
-            return x * thisHeight + y;
+        if (thisColMajor)
+            return y * thisWidth + x;
         else
-            return y * thisHeight + x;
+            return x * thisHeight + y;
     }
 
     private int getJ(int index) {
-        if (col_major)
-            return index / thisHeight;
+        if (thisColMajor)
+            return index / thisWidth;
         else
             return index % thisHeight;
     }
@@ -142,17 +139,17 @@ public class SeamCarver {
         int[] adjacent;
         if (y == 0) {
             adjacent = new int[2];
-            adjacent[0] = 0;
-            adjacent[1] = 1;
+            adjacent[0] = getIndex(x + 1, y);
+            adjacent[1] = getIndex(x + 1, y + 1);
         } else if (y == thisHeight - 1) {
             adjacent = new int[2];
-            adjacent[0] = y - 1;
-            adjacent[1] = y;
+            adjacent[0] = getIndex(x + 1, y - 1);
+            adjacent[1] = getIndex(x + 1, y);
         } else {
             adjacent = new int[3];
-            adjacent[0] = y - 1;
-            adjacent[1] = y;
-            adjacent[2] = y + 1;
+            adjacent[0] = getIndex(x + 1, y - 1);
+            adjacent[1] = getIndex(x + 1, y);
+            adjacent[2] = getIndex(x + 1, y + 1);
         }
         return adjacent;
     }
@@ -169,6 +166,7 @@ public class SeamCarver {
         int temp = thisWidth;
         thisWidth = thisHeight;
         thisHeight = temp;
+        thisColMajor = !thisColMajor;
     }
 
     // remove horizontal seam from current picture
