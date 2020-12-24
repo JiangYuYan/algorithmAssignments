@@ -3,6 +3,7 @@
 *.iml
 *.idea
 *.lift
+*.class
 
 # ignore all files in Files
 Files/
