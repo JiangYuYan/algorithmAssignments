@@ -56,17 +56,18 @@ public class SeamCarver {
 
     // current picture
     public Picture picture() {
-        if (!thisModified)
-            return thisPicture;
-        thisPicture = new Picture(width(), height());
-        for (int i = 0; i < width(); ++i) {
-            for (int j = 0; j < height(); ++j) {
-                int index = getIndex(i, j);
-                int rgb = (thisR[index] << 16) + (thisG[index] << 8) + (thisB[index] << 0);
-                thisPicture.setRGB(i, j, rgb);
+        if (thisModified) {
+            thisPicture = new Picture(width(), height());
+            for (int i = 0; i < width(); ++i) {
+                for (int j = 0; j < height(); ++j) {
+                    int index = getIndex(i, j);
+                    int rgb = (thisR[index] << 16) + (thisG[index] << 8) + (thisB[index] << 0);
+                    thisPicture.setRGB(i, j, rgb);
+                }
             }
+            thisModified = false;
         }
-        thisModified = false;
+        Picture pic = thisPicture;
         return thisPicture;
     }
 
@@ -82,6 +83,8 @@ public class SeamCarver {
 
     // energy of pixel at column x and row y
     public double energy(int x, int y) {
+        if (x < 0 || x >= thisWidth || y < 0 || y >= thisHeight)
+            throw new IllegalArgumentException("Out of range.");
         return thisEnergy[getIndex(x, y)];
     }
 
@@ -145,19 +148,33 @@ public class SeamCarver {
 
     private int[] adj(int x, int y) {
         int[] adjacent;
-        if (y == 0) {
-            adjacent = new int[2];
+        if (thisHeight == 1) {
+            adjacent = new int[1];
             adjacent[0] = getIndex(x + 1, y);
-            adjacent[1] = getIndex(x + 1, y + 1);
-        } else if (y == thisHeight - 1) {
+        } else if (thisHeight == 2) {
             adjacent = new int[2];
-            adjacent[0] = getIndex(x + 1, y - 1);
-            adjacent[1] = getIndex(x + 1, y);
+            if (y == 0) {
+                adjacent[0] = getIndex(x + 1, y);
+                adjacent[1] = getIndex(x + 1, y + 1);
+            } else {
+                adjacent[0] = getIndex(x + 1, y - 1);
+                adjacent[1] = getIndex(x + 1, y);
+            }
         } else {
-            adjacent = new int[3];
-            adjacent[0] = getIndex(x + 1, y - 1);
-            adjacent[1] = getIndex(x + 1, y);
-            adjacent[2] = getIndex(x + 1, y + 1);
+            if (y == 0) {
+                adjacent = new int[2];
+                adjacent[0] = getIndex(x + 1, y);
+                adjacent[1] = getIndex(x + 1, y + 1);
+            } else if (y == thisHeight - 1) {
+                adjacent = new int[2];
+                adjacent[0] = getIndex(x + 1, y - 1);
+                adjacent[1] = getIndex(x + 1, y);
+            } else {
+                adjacent = new int[3];
+                adjacent[0] = getIndex(x + 1, y - 1);
+                adjacent[1] = getIndex(x + 1, y);
+                adjacent[2] = getIndex(x + 1, y + 1);
+            }
         }
         return adjacent;
     }
@@ -188,6 +205,10 @@ public class SeamCarver {
         for (int i = 0; i < thisWidth; ++i) {
             if (seam[i] < 0 || seam[i] >= thisHeight)
                 throw new IllegalArgumentException("Out of range.");
+        }
+        for (int i = 1; i < thisWidth; ++i) {
+            if ((seam[i] - seam[i-1]) > 1 || seam[i] - seam[i-1] < -1)
+                throw new IllegalArgumentException("Don't satisfy continuity.");
         }
         shiftdata(seam);
         thisHeight -= 1;
