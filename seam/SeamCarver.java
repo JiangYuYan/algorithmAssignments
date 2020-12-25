@@ -1,34 +1,23 @@
 import edu.princeton.cs.algs4.Picture;
 
 public class SeamCarver {
-    private Picture thisPicture;
     private int thisWidth;
     private int thisHeight;
     private double[] thisEnergy;
-    private int[] thisR;
-    private int[] thisG;
-    private int[] thisB;
+    private int[] thisRGB;
     private boolean thisColMajor = false;
-    private boolean thisModified = false;
 
     // create a seam carver object based on the given picture
     public SeamCarver(Picture picture) {
         if (picture == null)
             throw new IllegalArgumentException("Null arguement.");
-        thisPicture = new Picture(picture);
-        thisWidth = thisPicture.width();
-        thisHeight = thisPicture.height();
-        thisR = new int[thisWidth*thisHeight];
-        thisG = new int[thisWidth*thisHeight];
-        thisB = new int[thisWidth*thisHeight];
+        thisWidth = picture.width();
+        thisHeight = picture.height();
+        thisRGB = new int[thisWidth*thisHeight];
         thisEnergy = new double[thisWidth*thisHeight];
         for (int i = 0; i < thisWidth; ++i) {
             for (int j = 0; j < thisHeight; ++j) {
-                int rgb = thisPicture.getRGB(i, j);
-                int index = getIndex(i, j);
-                thisR[index] = (rgb >> 16) & 0xFF;
-                thisG[index] = (rgb >> 8) & 0xFF;
-                thisB[index] = (rgb >> 0) & 0xFF;
+                thisRGB[getIndex(i, j)] = picture.getRGB(i, j);
             }
         }
         for (int i = 0; i < thisWidth; ++i) {
@@ -43,32 +32,50 @@ public class SeamCarver {
             throw new IllegalArgumentException("Out of range.");
         if (x == 0 || x == thisWidth - 1 || y == 0 || y == thisHeight - 1)
             return 1000;
+        return Math.sqrt(getDy(x, y) + getDx(x, y));
+    }
+
+    private double getDx(int x, int y) {
+        int rgb1 = thisRGB[getIndex(x + 1, y)];
+        int rgb2 = thisRGB[getIndex(x - 1, y)];
+        return getPow(rgb1, rgb2);
+    }
+
+    private double getDy(int x, int y) {
+        int rgb1 = thisRGB[getIndex(x, y + 1)];
+        int rgb2 = thisRGB[getIndex(x, y - 1)];
+        return getPow(rgb1, rgb2);
+    }
+
+    private double getPow(int rgb1, int rgb2) {
         double sum = 0;
-        sum += Math.pow(thisR[getIndex(x+1, y)] - thisR[getIndex(x-1, y)], 2);
-        sum += Math.pow(thisG[getIndex(x+1, y)] - thisG[getIndex(x-1, y)], 2);
-        sum += Math.pow(thisB[getIndex(x+1, y)] - thisB[getIndex(x-1, y)], 2);
-        sum += Math.pow(thisR[getIndex(x, y+1)] - thisR[getIndex(x, y-1)], 2);
-        sum += Math.pow(thisG[getIndex(x, y+1)] - thisG[getIndex(x, y-1)], 2);
-        sum += Math.pow(thisB[getIndex(x, y+1)] - thisB[getIndex(x, y-1)], 2);
-        sum = Math.sqrt(sum);
+        sum += Math.pow((getR(rgb1) - getR(rgb2)), 2);
+        sum += Math.pow((getG(rgb1) - getG(rgb2)), 2);
+        sum += Math.pow((getB(rgb1) - getB(rgb2)), 2);
         return sum;
     }
 
+    private int getR(int rgb) {
+        return (rgb >> 16) & 0xFF;
+    }
+
+    private int getG(int rgb) {
+        return (rgb >> 8) & 0xFF;
+    }
+
+    private int getB(int rgb) {
+        return (rgb >> 0) & 0xFF;
+    }
     // current picture
     public Picture picture() {
-        if (thisModified) {
-            thisPicture = new Picture(width(), height());
-            for (int i = 0; i < width(); ++i) {
-                for (int j = 0; j < height(); ++j) {
-                    int index = getIndex(i, j);
-                    int rgb = (thisR[index] << 16) + (thisG[index] << 8) + (thisB[index] << 0);
-                    thisPicture.setRGB(i, j, rgb);
-                }
+        Picture pic = new Picture(width(), height());
+        for (int i = 0; i < width(); ++i) {
+            for (int j = 0; j < height(); ++j) {
+                int rgb = thisRGB[getIndex(i, j)];
+                pic.setRGB(i, j, rgb);
             }
-            thisModified = false;
         }
-        Picture pic = thisPicture;
-        return thisPicture;
+        return pic;
     }
 
     // width of current picture
@@ -223,23 +230,6 @@ public class SeamCarver {
     }
 
     private void shiftdata(int[] cols) {
-        // int[] seamedIndices = new int[thisWidth];
-        // for (int i = 0; i < thisWidth; ++i) {
-        //     seamedIndices[i] = getIndex(i, cols[i]);
-        // }
-        // int newIndex = 0;
-        // int count = 0;
-        // for (int oldIndex = 0; oldIndex < thisWidth * thisHeight; ++oldIndex) {
-        //     if (count < thisWidth && oldIndex == seamedIndices[count]) {
-        //         ++count;
-        //     } else {
-        //         thisR[newIndex] = thisR[oldIndex];
-        //         thisG[newIndex] = thisG[oldIndex];
-        //         thisB[newIndex] = thisB[oldIndex];
-        //         thisEnergy[newIndex] = thisEnergy[oldIndex];
-        //         ++newIndex;
-        //     }
-        // }
         int newIndex, oldIndex;
         for (int i = 0; i < thisWidth; ++i) {
             for (int j = 0; j < thisHeight; ++j) {
@@ -248,21 +238,16 @@ public class SeamCarver {
                     newIndex = getIndex(i, j);
                     ++thisHeight;
                     oldIndex = getIndex(i, j);
-                    thisR[newIndex] = thisR[oldIndex];
-                    thisG[newIndex] = thisG[oldIndex];
-                    thisB[newIndex] = thisB[oldIndex];
+                    thisRGB[newIndex] = thisRGB[oldIndex];
                     thisEnergy[newIndex] = thisEnergy[oldIndex];
                 } else if (j > cols[i]) {
                     --thisHeight;
                     newIndex = getIndex(i, j-1);
                     ++thisHeight;
                     oldIndex = getIndex(i, j);
-                    thisR[newIndex] = thisR[oldIndex];
-                    thisG[newIndex] = thisG[oldIndex];
-                    thisB[newIndex] = thisB[oldIndex];
+                    thisRGB[newIndex] = thisRGB[oldIndex];
                     thisEnergy[newIndex] = thisEnergy[oldIndex];
                 }
-            
             }
         }
     }
@@ -278,5 +263,4 @@ public class SeamCarver {
     public static void main(String[] args) {
 
     }
-
 }
