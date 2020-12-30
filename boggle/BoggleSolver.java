@@ -72,7 +72,7 @@ public class BoggleSolver
                 if (chars[w] == 'Q') {
                     strw += 'U';
                 }
-                if (thisTrie.contains(strw) && strw.length() > 2) {
+                if (strw.length() > 2 && thisTrie.contains(strw)) {
                     thisSet.add(strw);
                 }
                 dfs(w, strw);
@@ -115,6 +115,8 @@ public class BoggleSolver
     // Returns the score of the given word if it is in the dictionary, zero otherwise.
     // (You can assume the word contains only the uppercase letters A through Z.)
     public int scoreOf(String word) {
+        if (!thisTrie.contains(word))
+            return 0;
         int score = word.length();
         if (score < 3)
             score = 0;

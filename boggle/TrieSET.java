@@ -15,6 +15,7 @@ import edu.princeton.cs.algs4.StdIn;
 import edu.princeton.cs.algs4.StdOut;
 import edu.princeton.cs.algs4.Queue;
 import java.util.Iterator;
+import java.util.HashMap;
 
 /**
  *  The {@code TrieSET} class represents an ordered set of strings over
@@ -38,11 +39,14 @@ import java.util.Iterator;
  *  @author Kevin Wayne
  */
 public class TrieSET implements Iterable<String> {
-    private static final int R = 256;        // extended ASCII
+    private static final int R = 26;        // extended ASCII
 
     private Node root;      // root of trie
     private int n;          // number of keys in trie
-
+    private HashMap<Character, Integer> map;
+    private String lastStr;
+    private Node lastNode;
+    private int lastD = 0;
     // R-way trie node
     private static class Node {
         private Node[] next = new Node[R];
@@ -53,6 +57,14 @@ public class TrieSET implements Iterable<String> {
      * Initializes an empty set of strings.
      */
     public TrieSET() {
+        map = new HashMap<Character, Integer>();
+        for (int i = 0; i < R; ++i) {
+            map.put((char)('A' + i), i);
+        }
+    }
+
+    private int toIndex(char c) {
+        return map.get(c);
     }
 
     /**
@@ -66,18 +78,29 @@ public class TrieSET implements Iterable<String> {
     public boolean hasPrefix(String prefix) {
         if (prefix == null)
             return false;
+        if (prefix.length() > lastD && lastStr == prefix.substring(0, lastD))
+            return find(lastNode, prefix, lastD);
         return find(root, prefix, 0);
     }
 
     private boolean find(Node x, String prefix, int d) {
-        if (d == prefix.length()) return true;
+        if (d == prefix.length()) {
+            lastD = d;
+            lastNode = x;
+            lastStr = prefix;
+            return true;
+        }
         if (x == null) return false;
-        return find(x.next[prefix.charAt(d)], prefix, d+1);
+        return find(x.next[toIndex(prefix.charAt(d))], prefix, d+1);
     }
 
     public boolean contains(String key) {
         if (key == null) throw new IllegalArgumentException("argument to contains() is null");
-        Node x = get(root, key, 0);
+        Node x = null;
+        if (key.length() >= lastD && lastStr == key.substring(0, lastD))
+            x = get(lastNode, key, lastD);
+        else
+            x = get(root, key, 0);
         if (x == null) return false;
         return x.isString;
     }
@@ -86,7 +109,7 @@ public class TrieSET implements Iterable<String> {
         if (x == null) return null;
         if (d == key.length()) return x;
         char c = key.charAt(d);
-        return get(x.next[c], key, d+1);
+        return get(x.next[toIndex(c)], key, d+1);
     }
 
     /**
@@ -107,7 +130,7 @@ public class TrieSET implements Iterable<String> {
         }
         else {
             char c = key.charAt(d);
-            x.next[c] = add(x.next[c], key, d+1);
+            x.next[toIndex(c)] = add(x.next[toIndex(c)], key, d+1);
         }
         return x;
     }
@@ -156,7 +179,7 @@ public class TrieSET implements Iterable<String> {
         if (x.isString) results.enqueue(prefix.toString());
         for (char c = 0; c < R; c++) {
             prefix.append(c);
-            collect(x.next[c], prefix, results);
+            collect(x.next[toIndex(c)], prefix, results);
             prefix.deleteCharAt(prefix.length() - 1);
         }
     }
@@ -186,13 +209,13 @@ public class TrieSET implements Iterable<String> {
         if (c == '.') {
             for (char ch = 0; ch < R; ch++) {
                 prefix.append(ch);
-                collect(x.next[ch], prefix, pattern, results);
+                collect(x.next[toIndex(ch)], prefix, pattern, results);
                 prefix.deleteCharAt(prefix.length() - 1);
             }
         }
         else {
             prefix.append(c);
-            collect(x.next[c], prefix, pattern, results);
+            collect(x.next[toIndex(c)], prefix, pattern, results);
             prefix.deleteCharAt(prefix.length() - 1);
         }
     }
@@ -221,7 +244,7 @@ public class TrieSET implements Iterable<String> {
         if (x.isString) length = d;
         if (d == query.length()) return length;
         char c = query.charAt(d);
-        return longestPrefixOf(x.next[c], query, d+1, length);
+        return longestPrefixOf(x.next[toIndex(c)], query, d+1, length);
     }
 
     /**
@@ -242,7 +265,7 @@ public class TrieSET implements Iterable<String> {
         }
         else {
             char c = key.charAt(d);
-            x.next[c] = delete(x.next[c], key, d+1);
+            x.next[toIndex(c)] = delete(x.next[toIndex(c)], key, d+1);
         }
 
         // remove subtrie rooted at x if it is completely empty
