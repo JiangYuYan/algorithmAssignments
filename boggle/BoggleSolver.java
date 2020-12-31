@@ -47,38 +47,45 @@ public class BoggleSolver
             }
         }
 
-        // for (int i = 0; i < N; ++i) {
+        // for (int i = 0; i < thisN; ++i) {
         //     StdOut.print(chars[i] + ": ");
         //     for (int j : adj[i]) {
         //         StdOut.print(chars[j] + " ");
         //     }
         //     StdOut.println();
         // }
+        
 
         for (int i = 0; i < thisN; ++i) {
-            String s = "" + chars[i];
-            if (chars[i] == 'Q')
-                s += 'U';
-            dfs(i, s);
+            TrieSET.Node root = thisTrie.getRoot();
+            StringBuilder s = new StringBuilder();
+            dfs(i, s, root);
         }
         return thisSet;
     }
 
-    private void dfs(int v, String str) {
+    private void dfs(int v, StringBuilder str, TrieSET.Node lastNode) {
+
+        TrieSET.Node vNode = thisTrie.hasChar(chars[v], lastNode);
+        if (vNode == null) return;
+        str.append(chars[v]);
+        if (chars[v] == 'Q') {
+            str.append('U');
+        }
+        if (str.length() > 2 && vNode.isString) {
+            thisSet.add(str.toString());
+        }
         thisMarked[v] = true;
         for (int w : adj[v]) {
-            if (!thisMarked[w] && thisTrie.hasPrefix(str + chars[w])) {
-                String strw = str + chars[w];
-                if (chars[w] == 'Q') {
-                    strw += 'U';
-                }
-                if (strw.length() > 2 && thisTrie.contains(strw)) {
-                    thisSet.add(strw);
-                }
-                dfs(w, strw);
+            if (!thisMarked[w]) {
+                dfs(w, str, vNode);
             }
         }
         thisMarked[v] = false;
+        str.deleteCharAt(str.length() - 1);
+        if (chars[v] == 'Q') {
+            str.deleteCharAt(str.length() - 1);
+        }
     }
 
     private HashSet<Integer> getAdj(int i, int j, int thisRow, int thisCol) {
@@ -145,6 +152,6 @@ public class BoggleSolver
             score += solver.scoreOf(word);
         }
         StdOut.println("Score = " + score);
+        StringBuilder s = new StringBuilder();
     }
-
 }

@@ -44,13 +44,10 @@ public class TrieSET implements Iterable<String> {
     private Node root;      // root of trie
     private int n;          // number of keys in trie
     private HashMap<Character, Integer> map;
-    private String lastStr;
-    private Node lastNode;
-    private int lastD = 0;
     // R-way trie node
-    private static class Node {
-        private Node[] next = new Node[R];
-        private boolean isString;
+    public static class Node {
+        public Node[] next = new Node[R];
+        public boolean isString;
     }
 
     /**
@@ -61,6 +58,10 @@ public class TrieSET implements Iterable<String> {
         for (int i = 0; i < R; ++i) {
             map.put((char)('A' + i), i);
         }
+    }
+
+    public Node getRoot() {
+        return root;
     }
 
     private int toIndex(char c) {
@@ -75,32 +76,34 @@ public class TrieSET implements Iterable<String> {
      * @throws IllegalArgumentException if {@code key} is {@code null}
      */
 
-    public boolean hasPrefix(String prefix) {
-        if (prefix == null)
-            return false;
-        if (prefix.length() > lastD && lastStr == prefix.substring(0, lastD))
-            return find(lastNode, prefix, lastD);
-        return find(root, prefix, 0);
+    public Node hasChar(char c, Node lastNode) {
+        Node node = null;
+        if (lastNode == null) {
+            // nothing to do
+        } else {
+            node = lastNode.next[toIndex(c)];
+            if (node == null) {
+                // nothing to do
+            } else {
+                if (c == 'Q') {
+                    node = node.next[toIndex('U')];
+                } else {
+                    // do nothing
+                }
+            }
+        }
+        return node;
     }
 
-    private boolean find(Node x, String prefix, int d) {
-        if (d == prefix.length()) {
-            lastD = d;
-            lastNode = x;
-            lastStr = prefix;
-            return true;
-        }
-        if (x == null) return false;
-        return find(x.next[toIndex(prefix.charAt(d))], prefix, d+1);
+    public boolean containsOne(Node thisNode) {
+        if (thisNode == null)
+            return false;
+        return thisNode.isString;
     }
 
     public boolean contains(String key) {
         if (key == null) throw new IllegalArgumentException("argument to contains() is null");
-        Node x = null;
-        if (key.length() >= lastD && lastStr == key.substring(0, lastD))
-            x = get(lastNode, key, lastD);
-        else
-            x = get(root, key, 0);
+        Node x = get(root, key, 0);
         if (x == null) return false;
         return x.isString;
     }
