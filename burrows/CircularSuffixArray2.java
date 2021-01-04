@@ -1,12 +1,12 @@
 import java.util.PriorityQueue;
 import edu.princeton.cs.algs4.StdOut;
 
-public class CircularSuffixArray {
+public class CircularSuffixArray2 {
     private int thisLength;
     private int[] thisIndex;
     private String thisString;
     // circular suffix array of s
-    public CircularSuffixArray(String s) {
+    public CircularSuffixArray2(String s) {
         if (s == null)
             throw new IllegalArgumentException("Null input.");
         thisString = s;
@@ -40,14 +40,18 @@ public class CircularSuffixArray {
         }
 
         public int compareTo(CircularSuffix that) {
-            for (int i = 0; i < thisLength; ++i) {
-                char v = thisString.charAt((this.index + i) % thisLength);
-                char w = thisString.charAt((that.index + i) % thisLength);
-                if (v > w)
-                    return +1;
-                if (v < w)
-                    return -1;
-            }
+            int vid = this.index;
+            int wid = that.index;
+            char v = thisString.charAt(vid);
+            char w = thisString.charAt(wid);
+            if (v > w)
+                return +1;
+            if (v < w)
+                return -1;
+            if (vid > wid)
+                return +1;
+            if (vid < wid)
+                return -1;
             return 0;
         }
     }
@@ -55,7 +59,7 @@ public class CircularSuffixArray {
     // unit testing (required)
     public static void main(String[] args) {
         String s = "ARD!RCAAAABB";
-        CircularSuffixArray cir = new CircularSuffixArray(s);
+        CircularSuffixArray2 cir = new CircularSuffixArray2(s);
         StdOut.println(cir.length());
         for (int i = 0; i < s.length(); ++i) {
             StdOut.println(cir.index(i));
