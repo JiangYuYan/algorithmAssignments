@@ -12,12 +12,14 @@ public class CircularSuffixArray2 {
         thisString = s;
         thisLength = s.length();
         thisIndex = new int[thisLength];
-        PriorityQueue<CircularSuffix> pq = new PriorityQueue<CircularSuffix>(thisLength);
-        for (int i = 0; i < thisLength; ++i) {
-            pq.add(new CircularSuffix(i));
-        }
-        for (int i = 0; i < thisLength; ++i) {
-            thisIndex[i] = pq.poll().index;
+        if (thisLength != 0) {
+            PriorityQueue<CircularSuffix> pq = new PriorityQueue<CircularSuffix>(thisLength);
+            for (int i = 0; i < thisLength; ++i) {
+                pq.add(new CircularSuffix(i));
+            }
+            for (int i = 0; i < thisLength; ++i) {
+                thisIndex[i] = pq.poll().index;
+            }
         }
     }
 
