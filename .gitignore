@@ -5,6 +5,12 @@
 *.lift
 *.class
 *.zip
+*.jpg
+*.bwt
+*.huf
+*.mtf
+*.gif
+*.bin
 
 # ignore all files in Files
 Files/
