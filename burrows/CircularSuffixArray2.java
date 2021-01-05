@@ -1,26 +1,22 @@
 import java.util.PriorityQueue;
+import java.util.Arrays;
 import edu.princeton.cs.algs4.StdOut;
 
 public class CircularSuffixArray2 {
     private int thisLength;
-    private int[] thisIndex;
     private String thisString;
+    private CircularSuffix[] thisSuffix; 
     // circular suffix array of s
     public CircularSuffixArray2(String s) {
         if (s == null)
             throw new IllegalArgumentException("Null input.");
         thisString = s;
         thisLength = s.length();
-        thisIndex = new int[thisLength];
-        if (thisLength != 0) {
-            PriorityQueue<CircularSuffix> pq = new PriorityQueue<CircularSuffix>(thisLength);
-            for (int i = 0; i < thisLength; ++i) {
-                pq.add(new CircularSuffix(i));
-            }
-            for (int i = 0; i < thisLength; ++i) {
-                thisIndex[i] = pq.poll().index;
-            }
+        thisSuffix = new CircularSuffix[thisLength];
+        for (int i = 0; i < thisLength; ++i) {
+            thisSuffix[i] = new CircularSuffix(i);
         }
+        Arrays.sort(thisSuffix);
     }
 
     // length of s
@@ -32,7 +28,7 @@ public class CircularSuffixArray2 {
     public int index(int i) {
         if (i < 0 || i >= thisLength)
             throw new IllegalArgumentException("Out of range.");
-        return thisIndex[i];
+        return thisSuffix[i].index;
     }
 
     private class CircularSuffix implements Comparable<CircularSuffix> {
